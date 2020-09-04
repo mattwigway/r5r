@@ -571,12 +571,6 @@ public class R5RCore {
         request.monteCarloDraws = this.numberOfMonteCarloDraws;
 
         request.destinationPointSet = destinationPoints;
-//        for (int i = 0; i < toIds.length; i++) {
-//            ((FreeFormPointSet) request.destinationPointSet).setId(i, toIds[i]);
-//            ((FreeFormPointSet) request.destinationPointSet).setLat(i, toLats[i]);
-//            ((FreeFormPointSet) request.destinationPointSet).setLon(i, toLons[i]);
-//            ((FreeFormPointSet) request.destinationPointSet).setCount(i, 1);
-//        }
 
 //        request.inRoutingFareCalculator = fareCalculator;
 
@@ -590,6 +584,9 @@ public class R5RCore {
         OneOriginResult travelTimeResults = computer.computeTravelTimes();
 
         // Build return table
+
+
+
         ArrayList<String> fromIdCol = new ArrayList<>(travelTimeResults.travelTimes.nPoints);
         ArrayList<String> idCol = new ArrayList<>(travelTimeResults.travelTimes.nPoints);
         ArrayList<Integer> travelTimeCol = new ArrayList<>(travelTimeResults.travelTimes.nPoints);

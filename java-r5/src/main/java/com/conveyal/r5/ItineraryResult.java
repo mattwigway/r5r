@@ -28,11 +28,13 @@ public class ItineraryResult {
      * For each target, the index number of N paths that reach that target at roughly a selected percentile
      * of all observed travel times. This is a flattened width * height * nPaths array.
      */
-    private final TIntList pathIndexes = new TIntArrayList();
+    private final TIntList pathIndexes;
 
-    public ItineraryResult(List<Path> pathForIndex, TObjectIntMap<Path> indexForPath, int nTargets, int nPathsPerTarget) {
+    public ItineraryResult(List<Path> pathForIndex, TObjectIntMap<Path> indexForPath, TIntList pathIndexes,
+                           int nTargets, int nPathsPerTarget) {
         this.pathForIndex = pathForIndex;
         this.indexForPath = indexForPath;
+        this.pathIndexes = pathIndexes;
         this.nTargets = nTargets;
         this.nPathsPerTarget = nPathsPerTarget;
     }

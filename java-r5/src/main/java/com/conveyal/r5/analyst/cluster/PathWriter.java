@@ -132,7 +132,7 @@ public class PathWriter {
         }
 
         // R5R: Create itineraries object to return paths to travel time matrix
-        itineraries = new ItineraryResult(this.pathForIndex, this.indexForPath, this.nTargets, this.nPathsPerTarget);
+        itineraries = new ItineraryResult(this.pathForIndex, this.indexForPath, this.pathIndexes, this.nTargets, this.nPathsPerTarget);
 
         // The code below is R5's original that saves paths to S3, which we don't use
 
