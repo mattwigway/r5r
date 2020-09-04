@@ -19,6 +19,8 @@ public class OneOriginResult {
 
     public final AccessibilityResult accessibility;
 
+    public ItineraryResult itineraries;
+
     public OneOriginResult(TravelTimeResult travelTimes, AccessibilityResult accessibility) {
         this.travelTimes = travelTimes;
         this.accessibility = accessibility;

@@ -309,8 +309,11 @@ public class TravelTimeComputer {
             perTargetPropagater.pathWriter = new PathWriter(request);
         }
 
-        return perTargetPropagater.propagate();
+        // R5R return itineraries in OneOriginResult
+        OneOriginResult result = perTargetPropagater.propagate();
+        result.itineraries = perTargetPropagater.pathWriter.itineraries;
 
+        return result;
     }
 
 

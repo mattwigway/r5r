@@ -1,5 +1,6 @@
 package com.conveyal.r5.analyst.cluster;
 
+import com.conveyal.r5.ItineraryResult;
 import com.conveyal.r5.analyst.PersistenceBuffer;
 import com.conveyal.r5.profile.Path;
 import gnu.trove.iterator.TIntIterator;
@@ -59,10 +60,20 @@ public class PathWriter {
      */
     private final TIntList pathIndexes = new TIntArrayList();
 
+    // R5R Itineraries to be returned to travel time matrix
+    public ItineraryResult itineraries;
+
     /** Constructor. Holds onto the task object, which is used to create unique names for the results files. */
     public PathWriter (AnalysisTask task) {
         this.task = task;
-        this.nTargets = task.width * task.height;
+
+        // Change for R5R: nTargets can come from the destination point set
+        if (task instanceof RegionalTask) {
+            this.nTargets = ((RegionalTask) task).destinationPointSet.featureCount();
+        } else {
+            this.nTargets = task.width * task.height;
+        }
+
         indexForPath = new TObjectIntHashMap<>(nTargets / 2, 0.5f, NO_PATH);
         nPathsPerTarget = task.nPathsPerTarget;
     }
@@ -119,43 +130,49 @@ public class PathWriter {
             LOG.info("No transit paths were found for task {}, not saving static site path file.", task.taskId);
             return;
         }
-        // The path grid file will be built up in this buffer.
-        PersistenceBuffer persistenceBuffer = new PersistenceBuffer();
-        try {
-            // Write a header, consisting of the magic letters that identify the format, followed by
-            // the number of destinations and the number of paths at each destination.
-            DataOutput dataOutput = persistenceBuffer.getDataOutput();
-            dataOutput.write("PATHGRID".getBytes());
-            dataOutput.writeInt(nTargets);
-            dataOutput.writeInt(nPathsPerTarget);
 
-            // Write the number of different distinct paths used to reach all destination cells,
-            // followed by the details for each of those distinct paths.
-            dataOutput.writeInt(pathForIndex.size());
-            for (Path path : pathForIndex) {
-                dataOutput.writeInt(path.patterns.length);
-                for (int i = 0 ; i < path.patterns.length; i ++){
-                    dataOutput.writeInt(path.boardStops[i]);
-                    dataOutput.writeInt(path.patterns[i]);
-                    dataOutput.writeInt(path.alightStops[i]);
-                }
-            }
+        // R5R: Create itineraries object to return paths to travel time matrix
+        itineraries = new ItineraryResult(this.pathForIndex, this.indexForPath, this.nTargets, this.nPathsPerTarget);
 
-            // Record the paths used to reach each target in the grid. They are delta coded to improve gzip compression,
-            // on the assumption that adjacent targets use paths with similar index numbers (often the same index number).
-            int prevIndex = 0;
-            for (TIntIterator iterator = pathIndexes.iterator(); iterator.hasNext(); ) {
-                int pathIndex = iterator.next();
-                int indexDelta = pathIndex - prevIndex;
-                dataOutput.writeInt(indexDelta);
-                prevIndex = pathIndex;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("IO exception while writing path grid.", e);
-        }
-        persistenceBuffer.doneWriting();
-        String pathFileName = task.taskId + "_paths.dat";
-        AnalystWorker.filePersistence.saveStaticSiteData(task, pathFileName, persistenceBuffer);
+        // The code below is R5's original that saves paths to S3, which we don't use
+
+//        // The path grid file will be built up in this buffer.
+//        PersistenceBuffer persistenceBuffer = new PersistenceBuffer();
+//        try {
+//            // Write a header, consisting of the magic letters that identify the format, followed by
+//            // the number of destinations and the number of paths at each destination.
+//            DataOutput dataOutput = persistenceBuffer.getDataOutput();
+//            dataOutput.write("PATHGRID".getBytes());
+//            dataOutput.writeInt(nTargets);
+//            dataOutput.writeInt(nPathsPerTarget);
+//
+//            // Write the number of different distinct paths used to reach all destination cells,
+//            // followed by the details for each of those distinct paths.
+//            dataOutput.writeInt(pathForIndex.size());
+//            for (Path path : pathForIndex) {
+//                dataOutput.writeInt(path.patterns.length);
+//                for (int i = 0 ; i < path.patterns.length; i ++){
+//                    dataOutput.writeInt(path.boardStops[i]);
+//                    dataOutput.writeInt(path.patterns[i]);
+//                    dataOutput.writeInt(path.alightStops[i]);
+//                }
+//            }
+//
+//            // Record the paths used to reach each target in the grid. They are delta coded to improve gzip compression,
+//            // on the assumption that adjacent targets use paths with similar index numbers (often the same index number).
+//            int prevIndex = 0;
+//            for (TIntIterator iterator = pathIndexes.iterator(); iterator.hasNext(); ) {
+//                int pathIndex = iterator.next();
+//                int indexDelta = pathIndex - prevIndex;
+//                dataOutput.writeInt(indexDelta);
+//                prevIndex = pathIndex;
+//            }
+//        } catch (IOException e) {
+//            throw new RuntimeException("IO exception while writing path grid.", e);
+//        }
+//        persistenceBuffer.doneWriting();
+//        String pathFileName = task.taskId + "_paths.dat";
+//        AnalystWorker.filePersistence.saveStaticSiteData(task, pathFileName, persistenceBuffer);
     }
 
 }

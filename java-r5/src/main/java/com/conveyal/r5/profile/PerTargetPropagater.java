@@ -127,7 +127,10 @@ public class PerTargetPropagater {
         this.nonTransitTravelTimesToTargets = nonTransitTravelTimesToTargets;
         // If we're making a static site we'll break travel times down into components and make paths.
         // This expects the pathsToStopsForIteration and pathWriter fields to be set separately by the caller.
-        this.calculateComponents = task.makeTauiSite;
+//        this.calculateComponents = task.makeTauiSite;
+        // Change for R5R: we don't use Taui
+        this.calculateComponents = task.computePaths;
+
 
         oneToOne = request instanceof RegionalTask && ((RegionalTask) request).oneToOne;
 

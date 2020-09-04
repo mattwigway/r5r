@@ -527,6 +527,7 @@ public class R5RCore {
         request.computeTravelTimeBreakdown = false;
         request.recordTimes = true;
         request.maxRides = this.maxTransfers;
+        request.nPathsPerTarget = 1;
 
         request.directModes = EnumSet.noneOf(LegMode.class);
         String[] modes = directModes.split(";");
