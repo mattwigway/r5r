@@ -609,15 +609,15 @@ public class R5RCore {
         travelTimeMatrix.addIntegerColumn("travel_time", -1);
 
         if (returnPaths) {
-            travelTimeMatrix.addIntegerColumn("segment", -1);
-            travelTimeMatrix.addStringColumn("route_id", "");
-            travelTimeMatrix.addStringColumn("route_name", "");
-            travelTimeMatrix.addIntegerColumn("board_stop", -1);
-            travelTimeMatrix.addDoubleColumn("board_lat", -1.0);
-            travelTimeMatrix.addDoubleColumn("board_lon", -1.0);
-            travelTimeMatrix.addIntegerColumn("alight_stop", -1);
-            travelTimeMatrix.addDoubleColumn("alight_lat", -1.0);
-            travelTimeMatrix.addDoubleColumn("alight_lon", -1.0);
+            travelTimeMatrix.addIntegerColumn("segment", null);
+            travelTimeMatrix.addStringColumn("route_id", null);
+            travelTimeMatrix.addStringColumn("route_name", null);
+            travelTimeMatrix.addIntegerColumn("board_stop", null);
+            travelTimeMatrix.addDoubleColumn("board_lat", null);
+            travelTimeMatrix.addDoubleColumn("board_lon", null);
+            travelTimeMatrix.addIntegerColumn("alight_stop", null);
+            travelTimeMatrix.addDoubleColumn("alight_lat", null);
+            travelTimeMatrix.addDoubleColumn("alight_lon", null);
         }
 
         for (int i = 0; i < travelTimeResults.travelTimes.nPoints; i++) {
