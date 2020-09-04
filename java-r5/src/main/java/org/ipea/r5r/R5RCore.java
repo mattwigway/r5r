@@ -604,8 +604,8 @@ public class R5RCore {
 
         // Build return table
         RDataFrame travelTimeMatrix = new RDataFrame();
-        travelTimeMatrix.addStringColumn("from_id", fromId);
-        travelTimeMatrix.addStringColumn("to_id", "");
+        travelTimeMatrix.addStringColumn("fromId", fromId);
+        travelTimeMatrix.addStringColumn("toId", "");
         travelTimeMatrix.addIntegerColumn("travel_time", -1);
 
         if (returnPaths) {
@@ -618,6 +618,8 @@ public class R5RCore {
             travelTimeMatrix.addIntegerColumn("alight_stop", -1);
             travelTimeMatrix.addDoubleColumn("alight_lat", -1.0);
             travelTimeMatrix.addDoubleColumn("alight_lon", -1.0);
+//            travelTimeMatrix.addIntegerColumn("trip", -1);
+//            travelTimeMatrix.addIntegerColumn("alight_time", -1);
         }
 
         for (int i = 0; i < travelTimeResults.travelTimes.nPoints; i++) {
@@ -625,7 +627,7 @@ public class R5RCore {
 
                 if (!returnPaths | travelTimeResults.itineraries == null) {
                     travelTimeMatrix.append();
-                    travelTimeMatrix.set("to_id", toIds[i]);
+                    travelTimeMatrix.set("toId", toIds[i]);
                     travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
 
                     continue;
@@ -639,7 +641,7 @@ public class R5RCore {
 
                     for (int j = 0; j < path.patterns.length; j++) {
                         travelTimeMatrix.append();
-                        travelTimeMatrix.set("to_id", toIds[i]);
+                        travelTimeMatrix.set("toId", toIds[i]);
                         travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
                         travelTimeMatrix.set("segment", j + 1);
                         travelTimeMatrix.set("board_stop", path.boardStops[j]);
@@ -666,6 +668,9 @@ public class R5RCore {
 
                         travelTimeMatrix.set("alight_lat", coordinate.y);
                         travelTimeMatrix.set("alight_lon", coordinate.x);
+
+//                        travelTimeMatrix.set("trip", path.trips[j]);
+//                        travelTimeMatrix.set("alight_time", path.alightTimes[j]);
                     }
                 }
             }

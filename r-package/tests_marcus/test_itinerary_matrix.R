@@ -21,7 +21,8 @@ df <- travel_time_matrix( r5r_core,
                           origins = points,
                           destinations = points,
                           mode = c("WALK", "BUS"),
-                          departure_datetime = lubridate::as_datetime("2019-03-20 14:00:00"),
+                          departure_datetime = lubridate::as_datetime("2019-03-20 14:00:00",
+                                                                      tz = "America/Sao_Paulo"),
                           max_walk_dist = 900,  # meters
                           max_trip_duration = 120, # minutes
                           return_paths = TRUE,
@@ -29,6 +30,10 @@ df <- travel_time_matrix( r5r_core,
 )
 toc()
 
+df %>%
+  filter(alight_time != -1) %>%
+  mutate(alight_time = alight_time / 3600) %>%
+  View()
 #### benchmarks
 #' return_paths = FALSE : 2.662 sec elapsed
 #' return_paths = TRUE  : 4.402 sec elapsed
