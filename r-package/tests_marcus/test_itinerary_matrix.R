@@ -30,8 +30,8 @@ df <- travel_time_matrix( r5r_core,
 toc()
 
 #### benchmarks
-#' return_paths = FALSE : 2.538 sec elapsed
-#' return_paths = TRUE  : 4.474 sec elapsed
+#' return_paths = FALSE : 2.662 sec elapsed
+#' return_paths = TRUE  : 4.402 sec elapsed
 #'
 #'
 #'
