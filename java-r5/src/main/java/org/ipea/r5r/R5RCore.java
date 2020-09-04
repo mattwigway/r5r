@@ -15,7 +15,6 @@ import com.conveyal.r5.kryo.KryoNetworkSerializer;
 import com.conveyal.r5.point_to_point.builder.PointToPointQuery;
 import com.conveyal.r5.streets.EdgeStore;
 import com.conveyal.r5.streets.VertexStore;
-import com.conveyal.r5.transit.TransitLayer;
 import com.conveyal.r5.transit.TransportNetwork;
 import com.conveyal.r5.transit.TripPattern;
 import org.locationtech.jts.geom.Coordinate;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -468,11 +466,11 @@ public class R5RCore {
         return sum;
     }
 
-    public List<LinkedHashMap<String, Object>> travelTimeMatrixParallel(String[] fromIds, double[] fromLats, double[] fromLons,
-                                                                        String[] toIds, double[] toLats, double[] toLons,
-                                                                        String directModes, String transitModes, String accessModes, String egressModes,
-                                                                        String date, String departureTime,
-                                                                        int maxWalkTime, int maxTripDuration) throws ExecutionException, InterruptedException {
+    public List<LinkedHashMap<String, ArrayList<Object>>> travelTimeMatrixParallel(String[] fromIds, double[] fromLats, double[] fromLons,
+                                                                                   String[] toIds, double[] toLats, double[] toLons,
+                                                                                   String directModes, String transitModes, String accessModes, String egressModes,
+                                                                                   String date, String departureTime,
+                                                                                   int maxWalkTime, int maxTripDuration) throws ExecutionException, InterruptedException {
         int[] originIndices = new int[fromIds.length];
         for (int i = 0; i < fromIds.length; i++) originIndices[i] = i;
 
@@ -487,7 +485,7 @@ public class R5RCore {
         return r5rThreadPool.submit(() ->
                 Arrays.stream(originIndices).parallel()
                         .mapToObj(index -> {
-                            LinkedHashMap<String, Object> results =
+                            LinkedHashMap<String, ArrayList<Object>> results =
                                     null;
                             try {
                                 results = travelTimesFromOrigin(fromIds[index], fromLats[index], fromLons[index],
@@ -500,11 +498,11 @@ public class R5RCore {
                         }).collect(Collectors.toList())).get();
     }
 
-    private LinkedHashMap<String, Object> travelTimesFromOrigin(String fromId, double fromLat, double fromLon,
-                                                               String[] toIds, double[] toLats, double[] toLons,
-                                                               String directModes, String transitModes, String accessModes, String egressModes,
-                                                               String date, String departureTime,
-                                                               int maxWalkTime, int maxTripDuration) throws ParseException {
+    private LinkedHashMap<String, ArrayList<Object>> travelTimesFromOrigin(String fromId, double fromLat, double fromLon,
+                                                                           String[] toIds, double[] toLats, double[] toLons,
+                                                                           String directModes, String transitModes, String accessModes, String egressModes,
+                                                                           String date, String departureTime,
+                                                                           int maxWalkTime, int maxTripDuration) throws ParseException {
 
         RegionalTask request = new RegionalTask();
 
@@ -584,32 +582,24 @@ public class R5RCore {
         OneOriginResult travelTimeResults = computer.computeTravelTimes();
 
         // Build return table
-
-
-
-        ArrayList<String> fromIdCol = new ArrayList<>(travelTimeResults.travelTimes.nPoints);
-        ArrayList<String> idCol = new ArrayList<>(travelTimeResults.travelTimes.nPoints);
-        ArrayList<Integer> travelTimeCol = new ArrayList<>(travelTimeResults.travelTimes.nPoints);
+        RDataFrame travelTimeMatrix = new RDataFrame();
+        travelTimeMatrix.addStringColumn("from_id", fromId);
+        travelTimeMatrix.addStringColumn("to_id", "");
+        travelTimeMatrix.addIntegerColumn("travel_time", -1);
 
         for (int i = 0; i < travelTimeResults.travelTimes.nPoints; i++) {
             if (travelTimeResults.travelTimes.getValues()[0][i] <= maxTripDuration) {
-                fromIdCol.add(fromId);
-                idCol.add(toIds[i]);
-                travelTimeCol.add(travelTimeResults.travelTimes.getValues()[0][i]);
+                travelTimeMatrix.append();
+                travelTimeMatrix.set("to_id", toIds[i]);
+                travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
             }
         }
 
-        if (fromIdCol.size() > 0) {
-            LinkedHashMap<String, Object> results = new LinkedHashMap<>();
-            results.put("fromId", fromIdCol);
-            results.put("toId", idCol);
-            results.put("travel_time", travelTimeCol);
-
-            return results;
+        if (travelTimeMatrix.nRow() > 0) {
+            return travelTimeMatrix.getDataFrame();
         } else {
             return null;
         }
-
     }
 
     public List<Object> getStreetNetwork() {
