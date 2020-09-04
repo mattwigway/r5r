@@ -9,13 +9,13 @@ import java.util.List;
 
 public class ItineraryResult {
     /** A list of unique paths, each one associated with a positive integer index by its position in the list. */
-    private final List<Path> pathForIndex;
+    public final List<Path> pathForIndex;
 
     /** The inverse of pathForIndex, giving the position of each path within that list. Used to deduplicate paths. */
-    private final TObjectIntMap<Path> indexForPath;
+    public final TObjectIntMap<Path> indexForPath;
 
     /** The total number of targets for which we're recording paths, i.e. width * height of the destination grid. */
-    private final int nTargets;
+    public final int nTargets;
 
     /**
      * The number of paths being recorded at each destination location.
@@ -28,7 +28,7 @@ public class ItineraryResult {
      * For each target, the index number of N paths that reach that target at roughly a selected percentile
      * of all observed travel times. This is a flattened width * height * nPaths array.
      */
-    private final TIntList pathIndexes;
+    public final TIntList pathIndexes;
 
     public ItineraryResult(List<Path> pathForIndex, TObjectIntMap<Path> indexForPath, TIntList pathIndexes,
                            int nTargets, int nPathsPerTarget) {

@@ -83,6 +83,7 @@ travel_time_matrix <- function(r5r_core,
                                bike_speed = 12,
                                max_rides = 3,
                                n_threads = Inf,
+                               return_paths = FALSE,
                                verbose = TRUE) {
 
 
@@ -155,7 +156,8 @@ travel_time_matrix <- function(r5r_core,
                                                     departure$date,
                                                     departure$time,
                                                     max_street_time,
-                                                    max_trip_duration)
+                                                    max_trip_duration,
+                                                    return_paths)
 
 
   # process results ---------------------------------------------------------

@@ -13,8 +13,10 @@ import com.conveyal.r5.api.util.*;
 import com.conveyal.r5.common.GeometryUtils;
 import com.conveyal.r5.kryo.KryoNetworkSerializer;
 import com.conveyal.r5.point_to_point.builder.PointToPointQuery;
+import com.conveyal.r5.profile.Path;
 import com.conveyal.r5.streets.EdgeStore;
 import com.conveyal.r5.streets.VertexStore;
+import com.conveyal.r5.transit.RouteInfo;
 import com.conveyal.r5.transit.TransportNetwork;
 import com.conveyal.r5.transit.TripPattern;
 import org.locationtech.jts.geom.Coordinate;
@@ -606,11 +608,66 @@ public class R5RCore {
         travelTimeMatrix.addStringColumn("to_id", "");
         travelTimeMatrix.addIntegerColumn("travel_time", -1);
 
+        if (returnPaths) {
+            travelTimeMatrix.addIntegerColumn("segment", -1);
+            travelTimeMatrix.addStringColumn("route_id", "");
+            travelTimeMatrix.addStringColumn("route_name", "");
+            travelTimeMatrix.addIntegerColumn("board_stop", -1);
+            travelTimeMatrix.addDoubleColumn("board_lat", -1.0);
+            travelTimeMatrix.addDoubleColumn("board_lon", -1.0);
+            travelTimeMatrix.addIntegerColumn("alight_stop", -1);
+            travelTimeMatrix.addDoubleColumn("alight_lat", -1.0);
+            travelTimeMatrix.addDoubleColumn("alight_lon", -1.0);
+        }
+
         for (int i = 0; i < travelTimeResults.travelTimes.nPoints; i++) {
             if (travelTimeResults.travelTimes.getValues()[0][i] <= maxTripDuration) {
-                travelTimeMatrix.append();
-                travelTimeMatrix.set("to_id", toIds[i]);
-                travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
+
+                if (!returnPaths | travelTimeResults.itineraries == null) {
+                    travelTimeMatrix.append();
+                    travelTimeMatrix.set("to_id", toIds[i]);
+                    travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
+
+                    continue;
+                }
+
+                int pathIndex = travelTimeResults.itineraries.pathIndexes.toArray()[i];
+
+                if (pathIndex != -1) {
+                    // There is a path between origin and destination that includes public transport
+                    Path path = travelTimeResults.itineraries.pathForIndex.get(pathIndex);
+
+                    for (int j = 0; j < path.patterns.length; j++) {
+                        travelTimeMatrix.append();
+                        travelTimeMatrix.set("to_id", toIds[i]);
+                        travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
+                        travelTimeMatrix.set("segment", j + 1);
+                        travelTimeMatrix.set("board_stop", path.boardStops[j]);
+                        travelTimeMatrix.set("alight_stop", path.alightStops[j]);
+
+                        TripPattern pattern = transportNetwork.transitLayer.tripPatterns.get(path.patterns[j]);
+
+                        travelTimeMatrix.set("route_id", pattern.routeId);
+                        RouteInfo route = transportNetwork.transitLayer.routes.get(pattern.routeIndex);
+                        String routeName = route.route_short_name != null && !route.route_short_name.isEmpty() ?
+                                route.route_short_name : route.route_long_name;
+                        travelTimeMatrix.set("route_name", routeName);
+
+                        Coordinate coordinate = transportNetwork.transitLayer.getCoordinateForStopFixed(path.boardStops[j]);
+                        coordinate.x = coordinate.x / FIXED_FACTOR;
+                        coordinate.y = coordinate.y / FIXED_FACTOR;
+
+                        travelTimeMatrix.set("board_lat", coordinate.y);
+                        travelTimeMatrix.set("board_lon", coordinate.x);
+
+                        coordinate = transportNetwork.transitLayer.getCoordinateForStopFixed(path.alightStops[j]);
+                        coordinate.x = coordinate.x / FIXED_FACTOR;
+                        coordinate.y = coordinate.y / FIXED_FACTOR;
+
+                        travelTimeMatrix.set("alight_lat", coordinate.y);
+                        travelTimeMatrix.set("alight_lon", coordinate.x);
+                    }
+                }
             }
         }
 
