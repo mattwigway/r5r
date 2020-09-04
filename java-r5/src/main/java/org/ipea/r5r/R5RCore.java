@@ -471,6 +471,18 @@ public class R5RCore {
                                                                                    String directModes, String transitModes, String accessModes, String egressModes,
                                                                                    String date, String departureTime,
                                                                                    int maxWalkTime, int maxTripDuration) throws ExecutionException, InterruptedException {
+        return travelTimeMatrixParallel(fromIds, fromLats, fromLons,
+                toIds, toLats, toLons, directModes,
+                transitModes, accessModes, egressModes, date, departureTime,
+                maxWalkTime, maxTripDuration, false);
+
+    }
+
+    public List<LinkedHashMap<String, ArrayList<Object>>> travelTimeMatrixParallel(String[] fromIds, double[] fromLats, double[] fromLons,
+                                                                                   String[] toIds, double[] toLats, double[] toLons,
+                                                                                   String directModes, String transitModes, String accessModes, String egressModes,
+                                                                                   String date, String departureTime,
+                                                                                   int maxWalkTime, int maxTripDuration, boolean returnPaths) throws ExecutionException, InterruptedException {
         int[] originIndices = new int[fromIds.length];
         for (int i = 0; i < fromIds.length; i++) originIndices[i] = i;
 
@@ -490,7 +502,7 @@ public class R5RCore {
                             try {
                                 results = travelTimesFromOrigin(fromIds[index], fromLats[index], fromLons[index],
                                         toIds, toLats, toLons, directModes, transitModes, accessModes, egressModes,
-                                        date, departureTime, maxWalkTime, maxTripDuration);
+                                        date, departureTime, maxWalkTime, maxTripDuration, returnPaths);
                             } catch (ParseException e) {
                                 e.printStackTrace();
                             }
@@ -502,7 +514,7 @@ public class R5RCore {
                                                                            String[] toIds, double[] toLats, double[] toLons,
                                                                            String directModes, String transitModes, String accessModes, String egressModes,
                                                                            String date, String departureTime,
-                                                                           int maxWalkTime, int maxTripDuration) throws ParseException {
+                                                                           int maxWalkTime, int maxTripDuration, boolean returnPaths) throws ParseException {
 
         RegionalTask request = new RegionalTask();
 
@@ -521,8 +533,15 @@ public class R5RCore {
         request.maxCarTime = maxTripDuration;
         request.maxTripDurationMinutes = maxTripDuration;
         request.makeTauiSite = false;
-        request.computePaths = false;
-        request.computeTravelTimeBreakdown = false;
+
+        if (returnPaths) {
+            request.computePaths = true;
+            request.computeTravelTimeBreakdown = true;
+        } else {
+            request.computePaths = false;
+            request.computeTravelTimeBreakdown = false;
+        }
+
         request.recordTimes = true;
         request.maxRides = this.maxTransfers;
         request.nPathsPerTarget = 1;

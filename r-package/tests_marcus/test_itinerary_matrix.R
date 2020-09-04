@@ -1,5 +1,5 @@
 # allocate RAM memory to Java
-options(java.parameters = "-Xmx8G")
+options(java.parameters = "-Xmx16G")
 
 # 1) build transport network, pointing to the path where OSM and GTFS data are stored
 # library(r5r)
@@ -23,4 +23,5 @@ df <- travel_time_matrix( r5r_core,
                                max_trip_duration = 120 # minutes
 )
 
+write_csv(df, "~/ttm_orig.csv")
 
