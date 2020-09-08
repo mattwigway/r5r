@@ -476,7 +476,7 @@ public class R5RCore {
         return travelTimeMatrixParallel(fromIds, fromLats, fromLons,
                 toIds, toLats, toLons, directModes,
                 transitModes, accessModes, egressModes, date, departureTime,
-                maxWalkTime, maxTripDuration, false);
+                maxWalkTime, maxTripDuration, false, 1);
 
     }
 
@@ -484,7 +484,7 @@ public class R5RCore {
                                                                                    String[] toIds, double[] toLats, double[] toLons,
                                                                                    String directModes, String transitModes, String accessModes, String egressModes,
                                                                                    String date, String departureTime,
-                                                                                   int maxWalkTime, int maxTripDuration, boolean returnPaths) throws ExecutionException, InterruptedException {
+                                                                                   int maxWalkTime, int maxTripDuration, boolean returnPaths, int pathsPerTarget) throws ExecutionException, InterruptedException {
         int[] originIndices = new int[fromIds.length];
         for (int i = 0; i < fromIds.length; i++) originIndices[i] = i;
 
@@ -504,7 +504,7 @@ public class R5RCore {
                             try {
                                 results = travelTimesFromOrigin(fromIds[index], fromLats[index], fromLons[index],
                                         toIds, toLats, toLons, directModes, transitModes, accessModes, egressModes,
-                                        date, departureTime, maxWalkTime, maxTripDuration, returnPaths);
+                                        date, departureTime, maxWalkTime, maxTripDuration, returnPaths, pathsPerTarget);
                             } catch (ParseException e) {
                                 e.printStackTrace();
                             }
@@ -516,7 +516,7 @@ public class R5RCore {
                                                                            String[] toIds, double[] toLats, double[] toLons,
                                                                            String directModes, String transitModes, String accessModes, String egressModes,
                                                                            String date, String departureTime,
-                                                                           int maxWalkTime, int maxTripDuration, boolean returnPaths) throws ParseException {
+                                                                           int maxWalkTime, int maxTripDuration, boolean returnPaths, int pathsPerTarget) throws ParseException {
 
         RegionalTask request = new RegionalTask();
 
@@ -546,7 +546,7 @@ public class R5RCore {
 
         request.recordTimes = true;
         request.maxRides = this.maxTransfers;
-        request.nPathsPerTarget = 1;
+        request.nPathsPerTarget = pathsPerTarget;
 
         request.directModes = EnumSet.noneOf(LegMode.class);
         String[] modes = directModes.split(";");
@@ -609,6 +609,7 @@ public class R5RCore {
         travelTimeMatrix.addIntegerColumn("travel_time", -1);
 
         if (returnPaths) {
+            travelTimeMatrix.addIntegerColumn("option", -1);
             travelTimeMatrix.addIntegerColumn("segment", -1);
             travelTimeMatrix.addStringColumn("route_id", "");
             travelTimeMatrix.addStringColumn("route_name", "");
@@ -633,44 +634,50 @@ public class R5RCore {
                     continue;
                 }
 
-                int pathIndex = travelTimeResults.itineraries.pathIndexes.toArray()[i];
+                int option = 0;
+                for (int p = (i * pathsPerTarget); p < (i * pathsPerTarget) + pathsPerTarget; p++) {
 
-                if (pathIndex != -1) {
-                    // There is a path between origin and destination that includes public transport
-                    Path path = travelTimeResults.itineraries.pathForIndex.get(pathIndex);
+                    int pathIndex = travelTimeResults.itineraries.pathIndexes.toArray()[p];
 
-                    for (int j = 0; j < path.patterns.length; j++) {
-                        travelTimeMatrix.append();
-                        travelTimeMatrix.set("toId", toIds[i]);
-                        travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
-                        travelTimeMatrix.set("segment", j + 1);
-                        travelTimeMatrix.set("board_stop", path.boardStops[j]);
-                        travelTimeMatrix.set("alight_stop", path.alightStops[j]);
+                    if (pathIndex != -1) {
+                        // There is a path between origin and destination that includes public transport
+                        Path path = travelTimeResults.itineraries.pathForIndex.get(pathIndex);
+                        option++;
 
-                        TripPattern pattern = transportNetwork.transitLayer.tripPatterns.get(path.patterns[j]);
+                        for (int j = 0; j < path.patterns.length; j++) {
+                            travelTimeMatrix.append();
+                            travelTimeMatrix.set("toId", toIds[i]);
+                            travelTimeMatrix.set("travel_time", travelTimeResults.travelTimes.getValues()[0][i]);
+                            travelTimeMatrix.set("option", option);
+                            travelTimeMatrix.set("segment", j + 1);
+                            travelTimeMatrix.set("board_stop", path.boardStops[j]);
+                            travelTimeMatrix.set("alight_stop", path.alightStops[j]);
 
-                        travelTimeMatrix.set("route_id", pattern.routeId);
-                        RouteInfo route = transportNetwork.transitLayer.routes.get(pattern.routeIndex);
-                        String routeName = route.route_short_name != null && !route.route_short_name.isEmpty() ?
-                                route.route_short_name : route.route_long_name;
-                        travelTimeMatrix.set("route_name", routeName);
+                            TripPattern pattern = transportNetwork.transitLayer.tripPatterns.get(path.patterns[j]);
 
-                        Coordinate coordinate = transportNetwork.transitLayer.getCoordinateForStopFixed(path.boardStops[j]);
-                        coordinate.x = coordinate.x / FIXED_FACTOR;
-                        coordinate.y = coordinate.y / FIXED_FACTOR;
+                            travelTimeMatrix.set("route_id", pattern.routeId);
+                            RouteInfo route = transportNetwork.transitLayer.routes.get(pattern.routeIndex);
+                            String routeName = route.route_short_name != null && !route.route_short_name.isEmpty() ?
+                                    route.route_short_name : route.route_long_name;
+                            travelTimeMatrix.set("route_name", routeName);
 
-                        travelTimeMatrix.set("board_lat", coordinate.y);
-                        travelTimeMatrix.set("board_lon", coordinate.x);
+                            Coordinate coordinate = transportNetwork.transitLayer.getCoordinateForStopFixed(path.boardStops[j]);
+                            coordinate.x = coordinate.x / FIXED_FACTOR;
+                            coordinate.y = coordinate.y / FIXED_FACTOR;
 
-                        coordinate = transportNetwork.transitLayer.getCoordinateForStopFixed(path.alightStops[j]);
-                        coordinate.x = coordinate.x / FIXED_FACTOR;
-                        coordinate.y = coordinate.y / FIXED_FACTOR;
+                            travelTimeMatrix.set("board_lat", coordinate.y);
+                            travelTimeMatrix.set("board_lon", coordinate.x);
 
-                        travelTimeMatrix.set("alight_lat", coordinate.y);
-                        travelTimeMatrix.set("alight_lon", coordinate.x);
+                            coordinate = transportNetwork.transitLayer.getCoordinateForStopFixed(path.alightStops[j]);
+                            coordinate.x = coordinate.x / FIXED_FACTOR;
+                            coordinate.y = coordinate.y / FIXED_FACTOR;
+
+                            travelTimeMatrix.set("alight_lat", coordinate.y);
+                            travelTimeMatrix.set("alight_lon", coordinate.x);
 
 //                        travelTimeMatrix.set("trip", path.trips[j]);
 //                        travelTimeMatrix.set("alight_time", path.alightTimes[j]);
+                        }
                     }
                 }
             }
