@@ -5,7 +5,7 @@ set -ex
 export LD_LIBRARY_PATH=/srv/conda/envs/notebook/lib:$LD_LIBRARY_PATH
 
 # use system Java (need Java 11 for R5)
-JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/bin/ R CMD javareconf
+JAVA_HOME=/usr/lib/jvm/java-15-openjdk-amd64/bin/ R CMD javareconf
 
 # install JDX (not on conda-forge)
 R --no-save <<EOF
