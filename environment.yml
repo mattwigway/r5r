@@ -1,0 +1,20 @@
+# preinstall R dependencies from conda-forge so that they don't all have to get built from source
+
+dependencies:
+  # deps for r5r
+  - r-checkmate
+  - r-data.table
+  - r-jdx
+  - r-rjava
+  - r-sf
+  - r-sfheaders
+  - r-covr
+  - r-knitr
+  - r-mapview
+  - r-rmarkdown
+  - r-testthat
+  - openjdk
+  - r-ggplot2
+
+  # deps for paper code
+  - r-akima
