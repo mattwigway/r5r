@@ -16,6 +16,7 @@ dependencies:
   - r-rmarkdown
   - r-testthat
   - r-ggplot2
+  - r-rcpp==1.0.5
 
   # deps for paper code
   - r-akima
