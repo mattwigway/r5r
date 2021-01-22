@@ -6,7 +6,6 @@ dependencies:
   - r-irkernel>=1.1
   - r-checkmate
   - r-data.table
-  - r-jdx
   - r-rjava
   - r-sf
   - r-sfheaders
