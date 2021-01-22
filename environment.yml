@@ -15,7 +15,6 @@ dependencies:
   - r-testthat
   - r-ggplot2
   - r-rcpp
-  - main::openjdk>=11
 
   # deps for paper code
   - r-akima
