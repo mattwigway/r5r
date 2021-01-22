@@ -1,9 +1,9 @@
 # preinstall R dependencies from conda-forge so that they don't all have to get built from source
 
-channels:
-  - r  # use offical R channel not conda-forge due to 
 dependencies:  
   # deps for r5r
+  - r-base>=4
+  - r-irkernel>=1.1
   - r-checkmate
   - r-data.table
   - r-jdx
@@ -16,7 +16,7 @@ dependencies:
   - r-rmarkdown
   - r-testthat
   - r-ggplot2
-  - r-rcpp==1.0.5
+  - r-rcpp
 
   # deps for paper code
   - r-akima
