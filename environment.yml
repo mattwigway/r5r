@@ -1,5 +1,4 @@
 # preinstall R dependencies from conda-forge so that they don't all have to get built from source
-
 dependencies:  
   # deps for r5r
   - r-base>=4
@@ -16,7 +15,7 @@ dependencies:
   - r-testthat
   - r-ggplot2
   - r-rcpp
-  - openjdk>=11
+  - main::openjdk>=11
 
   # deps for paper code
   - r-akima
