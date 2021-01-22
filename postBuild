@@ -4,8 +4,22 @@ set -ex
 
 export LD_LIBRARY_PATH=/srv/conda/envs/notebook/lib:$LD_LIBRARY_PATH
 
-# use system Java (need Java 11 for R5)
-JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/bin/ R CMD javareconf
+# conda only provides java 8, and ubuntu java 11 is broken, so manually install java 15...
+mkdir .java
+cd .java
+
+wget https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz
+shasum -a 256 -c - <<EOF
+openjdk-15.0.2_linux-x64_bin.tar.gz  91ac6fc353b6bf39d995572b700e37a20e119a87034eeb939a6f24356fbcd207
+EOF
+
+tar xzvf openjdk-15.0.2_linux-x64_bin.tar.gz
+# save some space on the image
+rm openjdk-15.0.2_linux-x64_bin.tar.gz
+
+cd ..
+
+JAVA_HOME=`pwd`/.java/jdk-15.0.2 R CMD javareconf
 
 # install JDX (not on conda-forge)
 R --no-save <<EOF
