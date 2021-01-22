@@ -2,5 +2,10 @@
 
 set -ex
 
+# install JDX (not on conda-forge)
+R --no-save <<EOF
+install.package('jdx', repos='https://cloud.r-project.org/')
+EOF
+
 # install the R package from local source
 R CMD INSTALL r-package
