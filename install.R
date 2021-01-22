@@ -1,4 +1,6 @@
-install.packages('r5r')
+install.packages('r5r', repos='https://cloud.r-project.org/')
+
+library(r5r)
 
 # prebuild graph so that binder runs are quick
 # points to directory with data

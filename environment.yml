@@ -1,6 +1,9 @@
 # preinstall R dependencies from conda-forge so that they don't all have to get built from source
 
 dependencies:
+  - r-base>=4
+  - r-irkernel>=1.1
+  
   # deps for r5r
   - r-checkmate
   - r-data.table
@@ -13,7 +16,6 @@ dependencies:
   - r-mapview
   - r-rmarkdown
   - r-testthat
-  - openjdk
   - r-ggplot2
 
   # deps for paper code
