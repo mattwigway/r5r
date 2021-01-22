@@ -2,6 +2,8 @@
 
 set -ex
 
+export LD_LIBRARY_PATH=/srv/conda/envs/notebook/lib:$LD_LIBRARY_PATH
+
 # install JDX (not on conda-forge)
 R --no-save <<EOF
 install.packages('jdx', repos='https://cloud.r-project.org/')
