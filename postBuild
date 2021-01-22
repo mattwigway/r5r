@@ -9,9 +9,6 @@ mkdir .java
 cd .java
 
 wget https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz
-shasum -a 256 -c - <<EOF
-openjdk-15.0.2_linux-x64_bin.tar.gz  91ac6fc353b6bf39d995572b700e37a20e119a87034eeb939a6f24356fbcd207
-EOF
 
 tar xzvf openjdk-15.0.2_linux-x64_bin.tar.gz
 # save some space on the image
