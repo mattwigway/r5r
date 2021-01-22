@@ -7,4 +7,6 @@ R CMD INSTALL r-package
 
 # force source install to avoid compiler incompatibilities probably having to do with
 # R 3.6 vs R 4
-R --no-save < 'install.packages("Rcpp", repos="https://cloud.r-project.org/")'
+R --no-save <<EOF
+install.packages("Rcpp", repos="https://cloud.r-project.org/")
+EOF
