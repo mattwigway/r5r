@@ -1,9 +1,6 @@
 # preinstall R dependencies from conda-forge so that they don't all have to get built from source
 
-dependencies:
-  - r-base>=4
-  - r-irkernel>=1.1
-  
+dependencies:  
   # deps for r5r
   - r-checkmate
   - r-data.table
