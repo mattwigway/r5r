@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# install the R package from local source
+R CMD INSTALL r-project
