@@ -15,6 +15,7 @@ dependencies:
   - r-testthat
   - r-ggplot2
   - r-rcpp
+  - gxx_linux-64  # glibcxx
 
   # deps for paper code
   - r-akima
