@@ -35,7 +35,6 @@ repositories {
         name = "R5"
         url = "https://maven.pkg.github.com/conveyal/r5"
         credentials {
-            username = System.getenv("GITHUB_ACTOR")
             password = System.getenv("GITHUB_TOKEN")
         }
     }
