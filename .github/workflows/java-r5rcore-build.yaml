@@ -1,7 +1,6 @@
 name: Java R5RCore build
 
-permissions:
-  packages: read
+permissions: read-all
 
 on:
   push:
