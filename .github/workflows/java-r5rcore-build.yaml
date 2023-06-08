@@ -9,10 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: java-r5rcore
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
@@ -26,3 +22,4 @@ jobs:
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
           arguments: build
+          build-root-directory: java-r5rcore
