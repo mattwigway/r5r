@@ -60,4 +60,5 @@ jobs:
           mv java-r5rcore/build/libs/java-r5rcore-*.jar r-package/inst/jar/r5r.jar
           git add r-package/inst/jar/r5r.jar
           git commit -m "Rebuild JAR for commit ${GITHUB_SHA}"
+          git push origin jar-update-${GITHUB_SHA}
           gh pr create -a "${GITHUB_ACTOR}" -B "${GITHUB_REF}" -t "Update JAR for branch ${GITHUB_REF}" -b "Update JAR for branch ${GITHUB_REF}, commit ${GITHUB_SHA}"
