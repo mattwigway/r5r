@@ -8,6 +8,9 @@ on:
 
 jobs:
   build:
+    env:
+      GH_TOKEN: ${{ github.token }}
+
     runs-on: ubuntu-latest
       
     # don't build on merges to master
