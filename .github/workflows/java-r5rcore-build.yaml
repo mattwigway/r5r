@@ -28,10 +28,10 @@ jobs:
           install.packages('devtools')
         shell: Rscript {0}
         working-directory: r-package
-      - name: Set up JDK 17
+      - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@ccb4328a959376b642e027874838f60f8e596de3
@@ -40,3 +40,11 @@ jobs:
         with:
           arguments: build
           build-root-directory: java-r5rcore
+      
+      - name: Create pull request
+        run: |
+          git switch -c jar-update-${GITHUB_SHA}
+          mv java-r5rcore/build/libs/java-r5rcore-*.jar r-package/inst/jar/r5r.jar
+          git add r-package/inst/jar/r5r.jar
+          git commit -m "Rebuild JAR for commit ${GITHUB_SHA}"
+          gh pr create -a "${GITHUB_ACTOR}" -B "${GITHUB_REF}" -t "Update JAR for branch ${GITHUB_REF}" -b "Update JAR for branch ${GITHUB_REF}, commit ${GITHUB_SHA}"
