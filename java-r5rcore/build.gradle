@@ -10,7 +10,7 @@ version '1.0.2-SNAPSHOT'
 // grab
 def baos = new ByteArrayOutputStream()
 exec {
-    commandLine 'R', '--no-save', '-q', '-s', '-e', 'setwd("../r-package"); devtools::load_all(); cat(download_r5());'
+    commandLine 'R', '--no-save', '-q', '-s', '-e', 'setwd("../r-package"); library(sf); devtools::load_all(quiet=T); cat(download_r5());'
     standardOutput = baos
 }
 def r5Path = baos.toString()
