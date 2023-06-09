@@ -51,12 +51,18 @@ jobs:
           arguments: build
           build-root-directory: java-r5rcore
       
-      - name: Create pull request
-        # https://github.com/actions/checkout/pull/1184
+      # create a verified commit from GH actions
+      # see https://gist.github.com/swinton/03e84635b45c78353b1f71e41007fc7c
+      - name: Commit JAR
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mv java-r5rcore/build/libs/java-r5rcore-*.jar r-package/inst/jar/r5r.jar
-          git add r-package/inst/jar/r5r.jar
-          git commit -m "Rebuild JAR for commit ${GITHUB_SHA}"
-          git push
+          gh api --method PUT /repos/:owner/:repo/contents/r-package/inst/jar/r5r.jar \
+            --field message="Update JAR for commit ${GITHUB_SHA}" \
+            --field content=@<( base64 -i r-package/inst/jar/r5r.jar ) \
+            --field encoding=base64 \
+            --field branch=${GITHUB_REF} \
+            --field sha=$(git rev-parse ${GITHUB_REF}:r-package/inst/jar/r5r.jar)
+
+
+        
+            
+          
