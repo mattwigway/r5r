@@ -20,7 +20,9 @@ jobs:
         with:
           use-public-rspm: true
       - name: Install dpkgs
-        run: sudo apt-get install libudunits2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudunits2
       - name: Install R packages
         run: |
           install.packages(c('devtools', 'remotes'))
