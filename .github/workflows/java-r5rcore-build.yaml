@@ -1,14 +1,21 @@
 name: Java R5RCore build
 
-on:
-  push:
-    paths:
-      - java-r5rcore/**
-      - .github/workflows/java-r5rcore-build.yaml
+on: issue_comment
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, "/rebuild jar")
+    
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+      
     steps:
       - uses: actions/checkout@v3
       - name: Set up R
