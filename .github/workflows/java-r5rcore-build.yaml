@@ -18,7 +18,8 @@ jobs:
           use-public-rspm: true
       - name: Install R packages
         run: |
-          install.packages(c('devtools', 'concaveman', 'data.table', 'rJava', 'sf', 'sfheaders'))
+          install.packages(c('devtools', 'remotes'))
+          remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
         working-directory: r-package
       - name: Set up JDK 11
