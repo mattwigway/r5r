@@ -3,9 +3,8 @@ name: Java R5RCore build
 on:
   push:
     paths:
-      java-r5rcore/**
-      .github/workflows/java-r5rcore-build.yaml
-
+      - java-r5rcore/**
+      - .github/workflows/java-r5rcore-build.yaml
 
 jobs:
   build:
