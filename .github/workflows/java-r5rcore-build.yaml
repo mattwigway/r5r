@@ -19,6 +19,14 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+    
+      - name: Install R packages
+        run: |
+          install.packages(c('devtools', 'remotes'))
+          remotes::install_deps(dependencies = TRUE)
+        shell: Rscript {0}
+        working-directory: r-package
+      
       - name: Install system dependencies
         run: |
           while read -r cmd
@@ -26,12 +34,7 @@ jobs:
             eval sudo $cmd
           done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
         working-directory: r-package
-      - name: Install R packages
-        run: |
-          install.packages(c('devtools', 'remotes'))
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
-        working-directory: r-package
+
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
