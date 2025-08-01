@@ -202,6 +202,8 @@ isochrone <- function(r5r_network,
   checkmate::assert_numeric(sample_size, lower = 0.2, upper = 1, max.len = 1)
 
   # max cutoff is used as max_trip_duration
+  # for isolines to work we need to have some values that are above the contour line so it can interpolate, so
+  # don't set a max trip duration based on cutoffs.
   #max_trip_duration = as.integer(max(cutoffs))
 
   # sort cutoffs and include 0
@@ -213,15 +215,14 @@ isochrone <- function(r5r_network,
 
   ## whether polygon- or line-based isochrones
   if (isTRUE(polygon_output)) {
-    # TODO this is a lot of computation just to get a bounding box
-    bbox = st_bbox(r5r::street_network_to_sf(r5r_network)$edges)
+    bbox = r5r_network@jcore$getBoundingBox()
 
     minlon = bbox[[1]]
     minlat = bbox[[2]]
     maxlon = bbox[[3]]
     maxlat = bbox[[4]]
 
-    # figure out the regular grid (Web Mercator Pixels, a la conveyal)
+    # for a polygon isochrone we use a web mercator regular grid (a la conveyal).
     # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Example:_Convert_a_GPS_coordinate_to_a_pixel_position_in_a_Web_Mercator_tile
     minx = floor(lon_to_webmercator_pixel(minlon, zoom))
     maxx = ceiling(lon_to_webmercator_pixel(maxlon, zoom))
@@ -295,13 +296,17 @@ isochrone <- function(r5r_network,
 
       checkmate::assert_true(nrow(temp_ttm) == nrow(destinations))
 
+      # turn the travel time matrix into an actual R matrix
+      # this would probably be hugely more efficient if we just used a WebMercatorGridPointSet on the R5
+      # side and returned a double array.
       # TODO make sure still sorted?
-      # TODO col-major vs row-major for performance
-      mtx = matrix(temp_ttm$travel_time_p50, (maxy - miny + 1), (maxx - minx + 1), byrow=T)
+      mtx = matrix(temp_ttm$travel_time_p50, (maxy - miny + 1), (maxx - minx + 1))
 
       nonzero_cutoffs = cutoffs[cutoffs>0]
+      # create the bands
       bands = isoband::isobands(minx:maxx, miny:maxy, mtx, rep(0, length(nonzero_cutoffs)), nonzero_cutoffs)
 
+      # convert back to lat lon
       bands = map(bands, function (b) {
         b$x = webmercator_pixel_to_lon(b$x, zoom)
         b$y = webmercator_pixel_to_lat(b$y, zoom)

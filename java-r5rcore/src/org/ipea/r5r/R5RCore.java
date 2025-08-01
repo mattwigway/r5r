@@ -9,6 +9,7 @@ import com.conveyal.r5.api.util.SearchType;
 import com.conveyal.r5.analyst.scenario.RoadCongestion;
 import com.conveyal.r5.transit.TransportNetwork;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.locationtech.jts.geom.Envelope;
 
 import org.ipea.r5r.Fares.FareStructure;
 import org.ipea.r5r.Fares.FareStructureBuilder;
@@ -133,6 +134,18 @@ public class R5RCore {
 
     public boolean getTravelTimesBreakdown() {
         return this.routingProperties.travelTimesBreakdown;
+    }
+
+    public double[] getBoundingBox() {
+        Envelope env = this.transportNetwork.streetLayer.getEnvelope(); 
+        double[] result = {
+            env.getMinX(),
+            env.getMinY(),
+            env.getMaxX(),
+            env.getMaxY()
+        };
+
+        return result;
     }
 
     public void setTravelTimesBreakdownStat(String stat) {
