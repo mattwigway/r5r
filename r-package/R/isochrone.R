@@ -176,7 +176,8 @@ isochrone <- function(r5r_network,
                       draws_per_minute = 5L,
                       n_threads = Inf,
                       verbose = FALSE,
-                      progress = TRUE){
+                      progress = TRUE,
+                      zoom = 10){
 
 
   # deprecating r5r_core --------------------------------------
@@ -201,7 +202,7 @@ isochrone <- function(r5r_network,
   checkmate::assert_numeric(sample_size, lower = 0.2, upper = 1, max.len = 1)
 
   # max cutoff is used as max_trip_duration
-  max_trip_duration = as.integer(max(cutoffs))
+  #max_trip_duration = as.integer(max(cutoffs))
 
   # sort cutoffs and include 0
   if (min(cutoffs) > 0) {cutoffs <- sort(c(0, cutoffs))}
@@ -212,17 +213,31 @@ isochrone <- function(r5r_network,
 
   ## whether polygon- or line-based isochrones
   if (isTRUE(polygon_output)) {
+    # TODO this is a lot of computation just to get a bounding box
+    bbox = st_bbox(r5r::street_network_to_sf(r5r_network)$edges)
 
-    # use all network nodes as destination points
-    destinations = r5r::street_network_to_sf(r5r_network)$vertices
+    minlon = bbox[[1]]
+    minlat = bbox[[2]]
+    maxlon = bbox[[3]]
+    maxlat = bbox[[4]]
 
-    # sample size: proportion of nodes to be considered
-    set.seed(42)
-    index_sample <- sample(1:nrow(destinations),
-                           size = nrow(destinations) * sample_size,
-                           replace = FALSE)
-    destinations <- destinations[index_sample,]
-    on.exit(rm(.Random.seed, envir=globalenv()))
+    # figure out the regular grid (Web Mercator Pixels, a la conveyal)
+    # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Example:_Convert_a_GPS_coordinate_to_a_pixel_position_in_a_Web_Mercator_tile
+    minx = floor(lon_to_webmercator_pixel(minlon, zoom))
+    maxx = ceiling(lon_to_webmercator_pixel(maxlon, zoom))
+    # y points south in web mercator
+    miny = floor(lat_to_webmercator_pixel(maxlat, zoom))
+    maxy = ceiling(lat_to_webmercator_pixel(minlat, zoom))
+
+    destinations = data.frame(
+      # cartesian product of x and y
+      id = as.character(1:((maxx - minx + 1) * (maxy - miny + 1))),
+      x = rep(minx:maxx, each=length(miny:maxy)),
+      y = rep(miny:maxy, times=length(minx:maxx))
+    )
+
+    destinations$lat = webmercator_pixel_to_lat(destinations$y, zoom)
+    destinations$lon = webmercator_pixel_to_lon(destinations$x, zoom)
   }
 
   if(isFALSE(polygon_output)){
@@ -249,7 +264,7 @@ isochrone <- function(r5r_network,
                               max_walk_time = max_walk_time,
                               max_bike_time = max_bike_time,
                               max_car_time = max_car_time,
-                              max_trip_duration = max_trip_duration,
+                              max_trip_duration = 120L,
                               walk_speed = walk_speed,
                               bike_speed = bike_speed,
                               max_rides = max_rides,
@@ -260,52 +275,46 @@ isochrone <- function(r5r_network,
                               progress = progress
                               )
 
-    # ignore travel times equal to 0
-    ttm <- ttm[travel_time_p50>0, ]
+    if (isFALSE(polygon_output)) {
+      # polygon output works on raw ttm, only aggregate for line output
+      # ignore travel times equal to 0
+      ttm <- ttm[travel_time_p50>0, ]
 
-    # aggregate travel-times
-    # ttm[, isochrone_interval := cut(x=travel_time_p50, breaks=cutoffs)]
-    ttm[, isochrone := cut(x=travel_time_p50, breaks=cutoffs, labels=F)]
-    ttm[, isochrone := cutoffs[cutoffs>0][isochrone]]
-
-    # check if there are at least 3 points to build a
-    if (isTRUE(polygon_output)) {
-
-      check_number_destinations <- ttm[, .(count= .N ), by=.(from_id, isochrone) ]
-      temp_ids <- subset(check_number_destinations, count<3)$from_id
-
-      if(length(temp_ids)>0){
-        stop(paste0("Problem in the following origin points: ",
-                    paste0(temp_ids, collapse = ', '),". These origin points are probably located in areas where the road density is too low to create proper isochrone polygons and/or the time cutoff is too short. In this case, we strongly recommend setting `polygon_output = FALSE` or setting longer cutoffs."))
-      }
-
+      # aggregate travel-times
+      # ttm[, isochrone_interval := cut(x=travel_time_p50, breaks=cutoffs)]
+      ttm[, isochrone := cut(x=travel_time_p50, breaks=cutoffs, labels=F)]
+      ttm[, isochrone := cutoffs[cutoffs>0][isochrone]]
     }
+
 
     ### fun to get isochrones for each origin
     # polygon-based isochrones
       prep_iso_poly <- function(orig){ # orig = '89a90128107ffff'
 
-      temp_ttm <- subset(ttm, from_id == orig)
+      temp_ttm <- subset(ttm, from_id == orig)[destinations, on = c(to_id = "id"), nomatch=NA]
 
-      # join ttm results to destinations
-      dest <- subset(destinations, id %in% temp_ttm$to_id)
-      data.table::setDT(dest)[, id := as.character(id)]
-      dest[temp_ttm, on=c('id' ='to_id'), c('travel_time_p50', 'isochrone') := list(i.travel_time_p50, i.isochrone)]
+      checkmate::assert_true(nrow(temp_ttm) == nrow(destinations))
 
-      # build polygons with {concaveman}
-      # obs. {isoband} is much slower
-      dest <- sf::st_as_sf(dest)
+      # TODO make sure still sorted?
+      # TODO col-major vs row-major for performance
+      mtx = matrix(temp_ttm$travel_time_p50, (maxy - miny + 1), (maxx - minx + 1), byrow=T)
 
-      get_poly <- function(cut){ # cut = 30
-        temp <- subset(dest, travel_time_p50 <= cut)
+      nonzero_cutoffs = cutoffs[cutoffs>0]
+      bands = isoband::isobands(minx:maxx, miny:maxy, mtx, rep(0, length(nonzero_cutoffs)), nonzero_cutoffs)
 
-        temp_iso <- concaveman::concaveman(temp)
-        temp_iso$isochrone <- cut
-        return(temp_iso)
-      }
-      iso_list <- lapply(X=cutoffs[cutoffs>0], FUN=get_poly)
-      iso <- data.table::rbindlist(iso_list)
-      iso[, id := orig]
+      bands = map(bands, function (b) {
+        b$x = webmercator_pixel_to_lon(b$x, zoom)
+        b$y = webmercator_pixel_to_lat(b$y, zoom)
+        return(b)
+      })
+      class(bands) <- c("isobands", "iso")
+      
+      iso = data.table::data.table(sf::st_sf(
+        id=orig,
+        isochrone=nonzero_cutoffs,
+        geometry=sf::st_make_valid(sf::st_sfc(isoband::iso_to_sfg(bands), crs=4326))
+      ))
+
       iso <- iso[ order(-isochrone), ]
       data.table::setcolorder(iso, c('id', 'isochrone'))
       # iso <- sf::st_as_sf(iso)
@@ -330,7 +339,6 @@ isochrone <- function(r5r_network,
       # plot(temp_iso)
       return(temp_iso)
     }
-
 
     # get the isocrhone from each origin
     prep_iso <- ifelse(isTRUE(polygon_output), prep_iso_poly, prep_iso_lines)
