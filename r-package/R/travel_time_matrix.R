@@ -229,13 +229,13 @@ travel_time_matrix <- function(r5r_network,
 
   # call r5r_network method and process result -------------------------------
 
-  travel_times <- r5r_network$travelTimeMatrix(
-    origins$id,
-    origins$lat,
-    origins$lon,
-    destinations$id,
-    destinations$lat,
-    destinations$lon,
+  travel_times <- rJava::.jcall(r5r_network, "Lorg/ipea/r5r/RDataFrame;", "travelTimeMatrix", check=FALSE,
+    rJava::.jarray(origins$id),
+    rJava::.jarray(origins$lat),
+    rJava::.jarray(origins$lon),
+    rJava::.jarray(destinations$id),
+    rJava::.jarray(destinations$lat),
+    rJava::.jarray(destinations$lon),
     mode_list$direct_modes,
     mode_list$transit_mode,
     mode_list$access_mode,
@@ -247,6 +247,8 @@ travel_time_matrix <- function(r5r_network,
     max_car_time,
     max_trip_duration
   )
+
+  check_for_java_exception()
 
   if (!verbose & progress) cat("Preparing final output...", file = stderr())
 

@@ -351,3 +351,16 @@ lts_lines2shp <- function(new_lts_lines){
 
   if (file.exists(file_path)) { return(file_path)}
 }
+
+
+#' Check for a Java exception, and print a traceback if one occurred
+check_for_java_exception <- function() {
+  ex <- rJava::.jgetEx()
+  if (!is.null(ex)) {
+    rJava::.jclear() # clear exception so printing works
+    ex$printStackTrace()
+    stop("Java exception occurred (see error message above)")
+  } else {
+    print("No exception")
+  }
+}
