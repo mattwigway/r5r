@@ -1,0 +1,94 @@
+---
+title: 'Debugging with Fareto'
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+abstract: "This vignette shows how to debug fare systems with the Fareto tool."
+urlcolor: blue
+vignette: >
+  %\VignetteIndexEntry{Debugging with Fareto} 
+  %\VignetteEngine{knitr::rmarkdown} 
+  \usepackage[utf8]{inputenc}
+---
+
+```{r, include=F}
+options(java.parameters = "-Xmx4G")
+library(sf)
+library(data.table)
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(h3jsr)
+library(rfareto)
+devtools::load_all() # TODO
+```
+
+## Set up R5 and Porto Alegre network
+
+```{r}
+data_path <- system.file("extdata/poa", package = "r5r")
+ 
+r5r_core <- setup_r5(data_path)
+```
+
+## Set up fare structure
+
+Following Porto Alegre vignette.
+
+```{r}
+fare_structure <- setup_fare_structure(r5r_core, 
+                                           base_fare = 4.8,
+                                           by = "MODE")
+
+fare_structure$max_discounted_transfers
+    #> [1] 1
+fare_structure$transfer_time_allowance <- 60 # update transfer_time_allowance
+fare_structure$fare_cap
+
+fare_structure$fares_per_type[type == "RAIL", unlimited_transfers := TRUE]
+fare_structure$fares_per_type[type == "RAIL", fare := 4.50]
+fare_structure$fares_per_type[type == "RAIL", allow_same_route_transfer := TRUE]
+
+fare_structure$fares_per_transfer[first_leg == "BUS" & second_leg == "BUS", fare := 7.2]
+
+fare_structure$fares_per_transfer[first_leg != second_leg, fare := 8.37]
+ 
+# use fcase instead ?
+fare_structure$fares_per_transfer[, fare := fcase(first_leg == "BUS" & second_leg == "BUS", 7.2,
+                                                    first_leg != second_leg, 8.37)]
+
+fare_structure$fares_per_transfer <- fare_structure$fares_per_transfer[!(first_leg == "RAIL" & second_leg == "RAIL")]
+```
+
+## Read O/D data
+
+```{r}
+points <- read.csv(system.file("extdata/poa/poa_hexgrid.csv", package = "r5r"))
+```
+
+## Set up fareto
+
+```{r}
+rfareto_instance = setup_rfareto()
+```
+
+## Run routing
+
+```{r}
+fareto_result = fareto_debug(
+    r5r_core,
+    # fareto works with a 1-1 trip, so a single o-d must be specified
+    points[1,],
+    points[10,],
+    departure_datetime = as.POSIXct("13-05-2019 14:00:00", format = "%d-%m-%Y %H:%M:%S"),
+    mode = c("WALK", "TRANSIT"),
+    fare_structure = fare_structure,
+    max_trip_duration = 60,
+    verbose = T
+)
+```
+
+Now, we visualize with fareto.
+
+```{r}
+fareto(rfareto_instance, fareto_result)
+```
